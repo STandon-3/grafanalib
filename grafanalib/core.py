@@ -1220,6 +1220,7 @@ class Panel(object):
     :param repeat: Template's name to repeat Graph on
     :param span: defines the number of spans that will be used for panel
     :param targets: list of metric requests for chosen datasource
+    :param thresholdType: Type of threshold, absolute or percentage
     :param timeFrom: time range that Override relative time
     :param title: of the panel
     :param transparent: defines if panel should be transparent
@@ -1245,6 +1246,7 @@ class Panel(object):
     minSpan = attr.ib(default=None)
     repeat = attr.ib(default=attr.Factory(Repeat), validator=instance_of(Repeat))
     span = attr.ib(default=None)
+    thresholdType = attr.ib(default='absolute')
     timeFrom = attr.ib(default=None)
     timeShift = attr.ib(default=None)
     transparent = attr.ib(default=False, validator=instance_of(bool))
@@ -1274,6 +1276,7 @@ class Panel(object):
             'maxPerRow': self.repeat.maxPerRow,
             'span': self.span,
             'targets': self.targets,
+            'thresholdType': self.thresholdType,
             'timeFrom': self.timeFrom,
             'timeShift': self.timeShift,
             'title': self.title,
@@ -1383,6 +1386,7 @@ class Graph(Panel):
     :param stack: Each series is stacked on top of another
     :param percentage: Available when Stack is selected. Each series is drawn as a percentage of the total of all series
     :param thresholds: List of GraphThresholds - Only valid when alert not defined
+
     """
 
     alert = attr.ib(default=None)
@@ -1595,7 +1599,9 @@ class TimeSeries(Panel):
                             },
                         },
                         'mappings': self.mappings,
-                        'thresholds': self.thresholds,
+                        'thresholds': {
+                            'mode': self.thresholdType,
+                            'steps': self.thresholds},
                         'unit': self.unit
                     },
                     'overrides': self.overrides
@@ -1998,7 +2004,9 @@ class Stat(Panel):
                         'custom': {},
                         'decimals': self.decimals,
                         'mappings': self.mappings,
-                        'thresholds': self.thresholds,
+                        'thresholds': {
+                            'mode': self.thresholdType,
+                            'steps': self.thresholds},
                         'unit': self.format,
                         'noValue': self.noValue
                     },
@@ -2498,7 +2506,9 @@ class Table(Panel):
                             'displayMode': self.displayMode,
                             'filterable': self.filterable
                         },
-                        "thresholds": self.thresholds
+                        'thresholds': {
+                            'mode': self.thresholdType,
+                            'steps': self.thresholds},
                     },
                     'overrides': self.overrides
                 },
@@ -2664,7 +2674,9 @@ class GaugePanel(Panel):
                         'limit': self.limit,
                         'mappings': self.valueMaps,
                         'override': {},
-                        'thresholds': self.thresholds,
+                        'thresholds': {
+                            'mode': self.thresholdType,
+                            'steps': self.thresholds},
                         'values': self.allValues,
                     },
                     'showThresholdLabels': self.thresholdLabels,
@@ -3177,7 +3189,6 @@ class Threshold(object):
     :param value: When to use this color will be null if index is 0
     :param op: EVAL_LT for less than or EVAL_GT for greater than to indicate what the threshold applies to.
     :param yaxis: Choose left or right for panels
-    :param absoluteType: Type of values, absolute or percentage
 
     Care must be taken in the order in which the Threshold objects are specified,
     Grafana expects the value to increase.
@@ -3195,21 +3206,16 @@ class Threshold(object):
     line = attr.ib(default=True, validator=instance_of(bool))
     op = attr.ib(default=EVAL_GT)
     yaxis = attr.ib(default='left')
-    absoluteType = attr.ib(default='absolute')
 
     def to_json_data(self):
         return {
-            'mode': self.absoluteType,
-            'steps': {
-                'op': self.op,
-                'yaxis': self.yaxis,
-                'color': self.color,
-                'line': self.line,
-                'index': self.index,
-                'value': 'null' if self.index == 0 else self.value,
-            }
+            'op': self.op,
+            'yaxis': self.yaxis,
+            'color': self.color,
+            'line': self.line,
+            'index': self.index,
+            'value': 'null' if self.index == 0 else self.value,
         }
-
 
 
 @attr.s
