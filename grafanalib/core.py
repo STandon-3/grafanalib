@@ -1595,10 +1595,7 @@ class TimeSeries(Panel):
                             },
                         },
                         'mappings': self.mappings,
-                        'thresholds': {
-                            'mode': 'absolute',
-                            'steps': self.thresholds
-                        },
+                        'thresholds': self.thresholds,
                         'unit': self.unit
                     },
                     'overrides': self.overrides
@@ -2001,10 +1998,7 @@ class Stat(Panel):
                         'custom': {},
                         'decimals': self.decimals,
                         'mappings': self.mappings,
-                        'thresholds': {
-                            'mode': ABSOLUTE_TYPE,
-                            'steps': self.thresholds,
-                        },
+                        'thresholds': self.thresholds,
                         'unit': self.format,
                         'noValue': self.noValue
                     },
@@ -2504,10 +2498,7 @@ class Table(Panel):
                             'displayMode': self.displayMode,
                             'filterable': self.filterable
                         },
-                        "thresholds": {
-                            "mode": "absolute",
-                            "steps": self.thresholds
-                        }
+                        "thresholds": self.thresholds
                     },
                     'overrides': self.overrides
                 },
@@ -3186,6 +3177,7 @@ class Threshold(object):
     :param value: When to use this color will be null if index is 0
     :param op: EVAL_LT for less than or EVAL_GT for greater than to indicate what the threshold applies to.
     :param yaxis: Choose left or right for panels
+    :param absoluteType: Type of values, absolute or percentage
 
     Care must be taken in the order in which the Threshold objects are specified,
     Grafana expects the value to increase.
@@ -3203,16 +3195,21 @@ class Threshold(object):
     line = attr.ib(default=True, validator=instance_of(bool))
     op = attr.ib(default=EVAL_GT)
     yaxis = attr.ib(default='left')
+    absoluteType = attr.ib(default='absolute')
 
     def to_json_data(self):
         return {
-            'op': self.op,
-            'yaxis': self.yaxis,
-            'color': self.color,
-            'line': self.line,
-            'index': self.index,
-            'value': 'null' if self.index == 0 else self.value,
+            'mode': self.absoluteType,
+            'steps': {
+                'op': self.op,
+                'yaxis': self.yaxis,
+                'color': self.color,
+                'line': self.line,
+                'index': self.index,
+                'value': 'null' if self.index == 0 else self.value,
+            }
         }
+
 
 
 @attr.s
@@ -3423,10 +3420,7 @@ class StateTimeline(Panel):
                         'color': {
                             'mode': self.colorMode
                         },
-                        'thresholds': {
-                            'mode': ABSOLUTE_TYPE,
-                            'steps': self.thresholds,
-                        },
+                        'thresholds': self.thresholds,
                         'mappings': self.mappings
                     },
                     'overrides': self.overrides
